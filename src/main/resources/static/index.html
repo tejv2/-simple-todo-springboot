@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Todo App</title>
+</head>
+<body>
+<h1>Todo List</h1>
+
+<input type="text" id="todo-title" placeholder="Enter todo title">
+<button onclick="addTodo()">Add Todo</button>
+
+<table border="1" style="margin-top:20px; width:60%;">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Toggle Status</th>
+        <th>Delete</th>
+    </tr>
+    </thead>
+    <tbody id="todo-table-body">
+    </tbody>
+</table>
+
+<script>
+    async function fetchTodos() {
+        const response = await fetch('/todos');
+        const todos = await response.json();
+        const tableBody = document.getElementById('todo-table-body');
+        tableBody.innerHTML = '';
+
+        todos.forEach(todo => {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${todo.id}</td>
+                <td>${todo.title}</td>
+                <td>${todo.completed ? 'Completed' : 'Pending'}</td>
+                <td><button onclick='toggleComplete(${todo.id}, "${todo.title}", ${todo.completed})'>Toggle</button></td>
+                <td><button onclick='deleteTodo(${todo.id})'>Delete</button></td>
+            `;
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    async function addTodo() {
+        const title = document.getElementById('todo-title').value;
+        if (!title) return;
+        await fetch('/todos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: title, completed: false })
+        });
+        document.getElementById('todo-title').value = '';
+        fetchTodos();
+    }
+
+    async function toggleComplete(id, title, completed) {
+        await fetch(`/todos/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                completed: !completed
+            })
+        });
+        fetchTodos();
+    }
+
+    async function deleteTodo(id) {
+        await fetch(`/todos/${id}`, {
+            method: 'DELETE'
+        });
+        fetchTodos();
+    }
+
+    fetchTodos();
+</script>
+</body>
+</html>
